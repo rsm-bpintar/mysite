@@ -1,0 +1,26 @@
+---
+title: "Homework 1"
+author: "Brian Pintar"
+---
+
+# Question 1
+
+Prof says make a chart.
+
+```{python}
+import matplotlib.pyplot as plt
+
+plt.plot([1, 2, 3, 4], [3, 7, 2, 5])
+plt.title("Sample Line Plot")
+plt.xlabel("X Axis")
+plt.ylabel("Y Axis")
+plt.show()
+```
+
+testing again
+
+
+```{python}
+x=5
+print(x)
+```

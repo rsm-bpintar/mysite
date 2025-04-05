@@ -1,5 +1,19 @@
 [
   {
+    "objectID": "resume.html",
+    "href": "resume.html",
+    "title": "Brian’s Resume",
+    "section": "",
+    "text": "Last updated 8/24/24\nDownload PDF file."
+  },
+  {
+    "objectID": "projects/hw1/index.html",
+    "href": "projects/hw1/index.html",
+    "title": "Homework 1",
+    "section": "",
+    "text": "Question 1\nProf says make a chart.\n\nimport matplotlib.pyplot as plt\n\nplt.plot([1, 2, 3, 4], [3, 7, 2, 5])\nplt.title(\"Sample Line Plot\")\nplt.xlabel(\"X Axis\")\nplt.ylabel(\"Y Axis\")\nplt.show()\n\n\n\n\n\n\n\n\ntesting again\n\nx=5\nprint(x)\n\n5"
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Brian Pintar",
@@ -7,10 +21,10 @@
     "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   },
   {
-    "objectID": "resume.html",
-    "href": "resume.html",
-    "title": "Brian’s Resume",
+    "objectID": "projects.html",
+    "href": "projects.html",
+    "title": "My Projects",
     "section": "",
-    "text": "Last updated 8/24/24\nDownload PDF file."
+    "text": "Homework 1\n\n\n\n\nBrian Pintar\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nHomework 2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo matching items"
   }
 ]
