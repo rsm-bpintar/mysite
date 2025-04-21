@@ -12,6 +12,8 @@ Dean Karlan at Yale and John List at the University of Chicago conducted a field
 
 _to do: expand on the description of the experiment._
 
+PUblished in 2007, this experiment was inspired by America's significant increase in private charitable giving in the decades prior. It was alluded to the fact that a combination of increased wealth and an aging population in America likely caused this increase. Their analysis originally concluded that the match offer increases both the revenue per solicitation and the response rate. However, larger match ratios (i.e., $3:$1 instead of $1:$1) did not have any additional impact. It was also concluded that the matching had a much larger effect in red states than blue states.
+
 This project seeks to replicate their results.
 
 
@@ -20,6 +22,12 @@ This project seeks to replicate their results.
 ### Description
 
 _todo: Read the data into R/Python and describe the data_
+
+```{python}
+import pandas as pd
+df = pd.read_stata('karlan_list_2007.dta')
+df.head()
+```
 
 :::: {.callout-note collapse="true"}
 ### Variable Definitions
@@ -85,8 +93,84 @@ _todo: Read the data into R/Python and describe the data_
 
 As an ad hoc test of the randomization mechanism, I provide a series of tests that compare aspects of the treatment and control groups to assess whether they are statistically significantly different from one another.
 
-_todo: test a few variables other than the key outcome variables (for example, test months since last donation) to see if the treatment and control groups are statistically significantly different at the 95% confidence level. For at least one variable, perform the test as both t-test (use the formula in the class slides) and separately as a linear regression (regress for example mrm2 on treatment); confirm both methods yield the exact same results. It might be helpful to compare parts of your analysis to Table 1 in the paper. Be sure to comment on your results (hint: why is Table 1 included in the paper)._
+_todo: test a few variables other than the key outcome variables (for example, test months since last donation -mrm2) to see if the treatment and control groups are statistically significantly different at the 95% confidence level. For at least one variable, perform the test as both t-test (use the formula in the class slides) and separately as a linear regression (regress for example mrm2 on treatment); confirm both methods yield the exact same results. It might be helpful to compare parts of your analysis to Table 1 in the paper. Be sure to comment on your results (hint: why is Table 1 included in the paper)._
 
+NOTE TO SELF: WRAP INTO FUNCTION AND DO MULTIPLE VARIABLES
+
+```{python}
+import numpy as np
+from scipy.stats import t
+
+#define groups
+treat = df[df['treatment'] == 1]['mrm2'].dropna()
+control = df[df['control'] == 1]['mrm2'].dropna()
+
+#means
+mean_treat = treat.mean()
+mean_control = control.mean()
+
+#standard deviations
+std_treat = treat.std(ddof=1)
+std_control = control.std(ddof=1)
+
+#sample sizes
+n_treat = len(treat)
+n_control = len(control)
+
+#t-statistic
+numerator = mean_treat - mean_control
+denominator = np.sqrt((std_treat**2)/n_treat + (std_control**2)/n_control)
+t_stat = numerator / denominator
+
+#degrees of freedom
+df_numerator = ((std_treat**2)/n_treat + (std_control)/n_control)**2
+df_denominator = ((std_treat**2 / n_treat)**2) / (n_treat -1) + ((std_control**2 / n_control)**2) / (n_control - 1)
+df_welch = df_numerator / df_denominator
+
+#two-tailed p-value
+p_value = 2 * (1 - t.cdf(np.abs(t_stat), df=df_welch))
+
+print(f'treatment mean: {mean_treat:.2f}; control mean: {mean_control:.2f}')
+print(f'treatment stdev: {std_treat:.2f}; control stdev: {std_control:.2f}')
+print(f't-statistic: {t_stat:.4f}')
+print(f'degrees of freedom: {df_welch:.2f}')
+print(f'p-value: {p_value:.4f}')
+
+#decision
+if p_value < 0.05:
+    print("Reject the null hypothesis: The groups are significantly different")
+else:
+    print("Fail to reject the null hypothesis: No significant difference")
+```
+
+Let's compare results with a linear regression.
+
+```{python}
+import statsmodels.api as sm
+
+df_reg = df[['mrm2', 'treatment']].dropna()
+
+#define x and y
+X = df_reg['treatment']
+X = sm.add_constant(X)
+y = df_reg['mrm2']
+
+#fit model
+model = sm.OLS(y,X).fit()
+
+#extract values
+coef = model.params['treatment']
+t_stat = model.tvalues['treatment']
+p_value = model.pvalues['treatment']
+
+print(f"Coefficient (treatment): {coef:.4f}")
+print(f"t-statistic: {t_stat:.4f}")
+print(f"p-value: {p_value:.4f}")
+```
+
+P-values match accordingly confirming method.
+
+Table 1 is included in the original report to provide evidence of randomization of the treatment and control groups. This is proven to be true, being that we fail to reject the null hypothesis with no statistically significant difference in demographics for treatment and control groups.
 
 ## Experimental Results
 
@@ -96,8 +180,50 @@ First, I analyze whether matched donations lead to an increased response rate of
 
 _todo: make a barplot with two bars. Each bar is the proportion of people who donated. One bar for treatment and one bar for control._
 
+```{python}
+import matplotlib.pyplot as plt
+
+#calculate proportions
+prop_treatment = df[df['treatment'] == 1]['gave'].mean()
+prop_control = df[df['control'] == 1]['gave'].mean()
+
+#data for plot
+groups = ['Treatment', 'Control']
+proportions = [prop_treatment, prop_control]
+
+#plot
+plt.figure(figsize=(6,4))
+plt.bar(groups, proportions)
+plt.ylabel('Proportion Donated')
+plt.title('Donation Rate by Group')
+plt.ylim(0,.05)
+plt.show()
+```
+
 _todo: run a t-test between the treatment and control groups on the binary outcome of whether any charitable donation was made (you can do this as a bivariate linear regression if you want). It may help to confirm your calculations match Table 2a Panel A. Report your statistical results and interpret them in the context of the experiment (e.g., if you found a difference with a small p-value or something that was statistically significant at some threshold, what have you learned about human behavior? Use mostly English words, not numbers or stats, to explain your finding.)_
 
+```{python}
+df_lpm = df[['gave', 'treatment']].dropna()
+
+#define outcome and predictor
+X = sm.add_constant(df_lpm['treatment'])
+y = df_lpm['gave']
+
+#fit linear regression
+model = sm.OLS(y, X).fit()
+
+#extract stats
+coef = model.params['treatment']
+t_stat = model.tvalues['treatment']
+p_value = model.pvalues['treatment']
+
+#output
+print(f"Coefficient (treatment effect): {coef:.4f}")
+print(f"t-statistic: {t_stat:.4f}")
+print(f"p-value: {p_value:.4f}")
+```
+
+Summary here: 
 _todo: run a probit regression where the outcome variable is whether any charitable donation was made and the explanatory variable is assignment to treatment or control._ 
 
 _NOTE: Linear regression results appear replicate Table 3 column 1 in the paper. Probit results do not, despite Table 3 indicating its results come from probit regressions..._
