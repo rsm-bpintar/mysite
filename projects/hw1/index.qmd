@@ -95,52 +95,69 @@ As an ad hoc test of the randomization mechanism, I provide a series of tests th
 
 _todo: test a few variables other than the key outcome variables (for example, test months since last donation -mrm2) to see if the treatment and control groups are statistically significantly different at the 95% confidence level. For at least one variable, perform the test as both t-test (use the formula in the class slides) and separately as a linear regression (regress for example mrm2 on treatment); confirm both methods yield the exact same results. It might be helpful to compare parts of your analysis to Table 1 in the paper. Be sure to comment on your results (hint: why is Table 1 included in the paper)._
 
-NOTE TO SELF: WRAP INTO FUNCTION AND DO MULTIPLE VARIABLES
-
 ```{python}
 import numpy as np
 from scipy.stats import t
 
-#define groups
-treat = df[df['treatment'] == 1]['mrm2'].dropna()
-control = df[df['control'] == 1]['mrm2'].dropna()
+def t_test_randomization_check(df, column, treat_col='treatment', control_col='control'):
+    """
+    Performs Welch's t-test to compare treatment and control groups for a given variable.
 
-#means
-mean_treat = treat.mean()
-mean_control = control.mean()
+    Parameters:
+    - df: pandas DataFrame
+    - column: name of the column to compare (e.g., 'mrm2')
+    - treat_col: name of the treatment indicator column (default: 'treatment')
+    - control_col: name of the control indicator column (default: 'control')
+    """
 
-#standard deviations
-std_treat = treat.std(ddof=1)
-std_control = control.std(ddof=1)
+    # Extract the groups
+    treat = df[df[treat_col] == 1][column].dropna()
+    control = df[df[control_col] == 1][column].dropna()
 
-#sample sizes
-n_treat = len(treat)
-n_control = len(control)
+    # Means and standard deviations
+    mean_treat = treat.mean()
+    mean_control = control.mean()
+    std_treat = treat.std(ddof=1)
+    std_control = control.std(ddof=1)
 
-#t-statistic
-numerator = mean_treat - mean_control
-denominator = np.sqrt((std_treat**2)/n_treat + (std_control**2)/n_control)
-t_stat = numerator / denominator
+    # Sample sizes
+    n_treat = len(treat)
+    n_control = len(control)
 
-#degrees of freedom
-df_numerator = ((std_treat**2)/n_treat + (std_control)/n_control)**2
-df_denominator = ((std_treat**2 / n_treat)**2) / (n_treat -1) + ((std_control**2 / n_control)**2) / (n_control - 1)
-df_welch = df_numerator / df_denominator
+    # t-statistic
+    numerator = mean_treat - mean_control
+    denominator = np.sqrt((std_treat**2)/n_treat + (std_control**2)/n_control)
+    t_stat = numerator / denominator
 
-#two-tailed p-value
-p_value = 2 * (1 - t.cdf(np.abs(t_stat), df=df_welch))
+    # Degrees of freedom (Welch-Satterthwaite)
+    var_treat = std_treat**2 / n_treat
+    var_control = std_control**2 / n_control
+    df_numerator = (var_treat + var_control)**2
+    df_denominator = (var_treat**2 / (n_treat - 1)) + (var_control**2 / (n_control - 1))
+    df_welch = df_numerator / df_denominator
 
-print(f'treatment mean: {mean_treat:.2f}; control mean: {mean_control:.2f}')
-print(f'treatment stdev: {std_treat:.2f}; control stdev: {std_control:.2f}')
-print(f't-statistic: {t_stat:.4f}')
-print(f'degrees of freedom: {df_welch:.2f}')
-print(f'p-value: {p_value:.4f}')
+    # p-value
+    p_value = 2 * (1 - t.cdf(np.abs(t_stat), df=df_welch))
 
-#decision
-if p_value < 0.05:
-    print("Reject the null hypothesis: The groups are significantly different")
-else:
-    print("Fail to reject the null hypothesis: No significant difference")
+    # Output
+    print(f"\n🧪 T-Test for '{column}': Treatment vs Control")
+    print(f"Treatment mean: {mean_treat:.2f}; Control mean: {mean_control:.2f}")
+    print(f"Treatment std dev: {std_treat:.2f}; Control std dev: {std_control:.2f}")
+    print(f"t-statistic: {t_stat:.4f}")
+    print(f"Degrees of freedom: {df_welch:.2f}")
+    print(f"p-value: {p_value:.4f}")
+
+    # Decision
+    if p_value < 0.05:
+        print("❗ Reject the null hypothesis: The groups are significantly different.")
+    else:
+        print("✅ Fail to reject the null hypothesis: No significant difference between groups.")
+
+
+t_test_randomization_check(df, 'mrm2')
+t_test_randomization_check(df, 'female')
+t_test_randomization_check(df, 'red0')
+
 ```
 
 Let's compare results with a linear regression.
@@ -223,8 +240,27 @@ print(f"t-statistic: {t_stat:.4f}")
 print(f"p-value: {p_value:.4f}")
 ```
 
-Summary here: 
+Summary here: treatment effect is statistically significant.
+
 _todo: run a probit regression where the outcome variable is whether any charitable donation was made and the explanatory variable is assignment to treatment or control._ 
+
+```{python}
+df_probit = df[['gave', 'treatment']].dropna()
+
+#define predictors and outcome
+X = sm.add_constant(df_probit['treatment'])
+y = df_probit['gave']
+
+#fit probit model
+probit_model = sm.Probit(y, X).fit()
+
+print(probit_model.summary())
+
+mfx = probit_model.get_margeff()
+print(mfx.summary())
+```
+
+Results indicate an increase in probability of donating by 0.43%, holding all else constant. This is consistent with the linear regression results, as effect is small. P-values also match. Treatment has a significant but modest positive effect on probability of donation.
 
 _NOTE: Linear regression results appear replicate Table 3 column 1 in the paper. Probit results do not, despite Table 3 indicating its results come from probit regressions..._
 
@@ -235,21 +271,222 @@ Next, I assess the effectiveness of different sizes of matched donations on the 
 
 _todo: Use a series of t-tests to test whether the size of the match ratio has an effect on whether people donate or not. For example, does the 2:1 match rate lead increase the likelihood that someone donates as compared to the 1:1 match rate? Do your results support the "figures suggest" comment the authors make on page 8?_
 
+```{python}
+def t_test_donation_rate(df, ratio_a, ratio_b, outcome_col='gave', ratio_col='ratio'):
+    """
+    Performs and prints a Welch's t-test comparing donation rates between two match ratio groups.
+    
+    Parameters:
+    - df: pandas DataFrame
+    - ratio_a: first ratio value (e.g., 1, 2, 3, or "Control")
+    - ratio_b: second ratio value
+    - outcome_col: name of the binary outcome column (default: 'gave')
+    - ratio_col: name of the match ratio column (default: 'ratio')
+    
+    Returns:
+    - Dictionary of test results
+    """
+    
+    group_a = df[df[ratio_col] == ratio_a][outcome_col].dropna()
+    group_b = df[df[ratio_col] == ratio_b][outcome_col].dropna()
+
+    n1, n2 = len(group_a), len(group_b)
+    p1, p2 = group_a.mean(), group_b.mean()
+
+    # Standard error
+    se = np.sqrt((p1 * (1 - p1)) / n1 + (p2 * (1 - p2)) / n2)
+
+    # t-statistic
+    t_stat = (p2 - p1) / se
+
+    # Degrees of freedom
+    var1 = (p1 * (1 - p1)) / n1
+    var2 = (p2 * (1 - p2)) / n2
+    df_welch = (var1 + var2)**2 / ((var1**2)/(n1 - 1) + (var2**2)/(n2 - 1))
+
+    # Two-tailed p-value
+    p_value = 2 * (1 - t.cdf(np.abs(t_stat), df=df_welch))
+
+    # Print results
+    print(f"\n🎯 T-Test: {ratio_b}:1 vs {ratio_a}:1 Match Ratio")
+    print("-" * 40)
+    print(f"Sample size ({ratio_a}:1): {n1}")
+    print(f"Sample size ({ratio_b}:1): {n2}")
+    print(f"Donation rate ({ratio_a}:1): {p1:.4f}")
+    print(f"Donation rate ({ratio_b}:1): {p2:.4f}")
+    print(f"t-statistic: {t_stat:.4f}")
+    print(f"Degrees of freedom: {df_welch:.2f}")
+    print(f"p-value: {p_value:.4f}")
+    
+    if p_value < 0.05:
+        print("✅ Statistically significant at the 5% level.")
+    else:
+        print("❌ Not statistically significant at the 5% level.")
+
+t_test_donation_rate(df, 'Control', 1)
+t_test_donation_rate(df, 1, 2)  # 1:1 vs 2:1
+t_test_donation_rate(df, 2, 3)
+t_test_donation_rate(df, 1, 3)
+
+```
+
+Author suggests that neither the match threshold or example amount had a meaningful influence on behavior. Results above suggest the same. Not enough evidence to conclude that the difference in donation rates is statistically significant.
+
 _todo: Assess the same issue using a regression. Specifically, create the variable `ratio1` then regress `gave` on `ratio1`, `ratio2`, and `ratio3` (or alternatively, regress `gave` on the categorical variable `ratio`). Interpret the coefficients and their statistical precision._
+
+Create the ratio1 variable.
+```{python}
+#create the ratio1 variable
+df['ratio_str'] = df['ratio'].astype('str')
+df['ratio1'] = (df['ratio_str'] == '1').astype(int)
+df['ratio2'] = (df['ratio_str'] == '2').astype(int)
+df['ratio3'] = (df['ratio_str'] == '3').astype(int)
+print(df[['ratio', 'ratio1', 'ratio2', 'ratio3']].head(10))
+```
+Regression results.
+```{python}
+def compare_match_ratios(df, ratio_a, ratio_b, ratio_col='ratio', outcome_col='gave'):
+    """
+    Compare two match ratios using linear regression on a binary outcome.
+
+    Parameters:
+    - df: DataFrame with data
+    - ratio_a: first match ratio to compare (e.g., 1 for 1:1)
+    - ratio_b: second match ratio to compare (e.g., 2 for 2:1)
+    - ratio_col: name of the column containing match ratios
+    - outcome_col: name of the binary outcome column
+
+    Returns:
+    - Dictionary with coefficient and p-value
+    """
+
+    # Filter to only the two groups being compared
+    df_sub = df[df[ratio_col].isin([ratio_a, ratio_b])].copy()
+
+    # Create indicator for being in ratio_b group
+    df_sub['is_ratio_b'] = (df_sub[ratio_col] == ratio_b).astype(int)
+
+    # Run regression
+    X = sm.add_constant(df_sub['is_ratio_b'])
+    y = df_sub[outcome_col]
+
+    model = sm.OLS(y, X).fit()
+
+    coef = model.params['is_ratio_b']
+    p_value = model.pvalues['is_ratio_b']
+
+    print(f"\n📊 Comparing donation rates: {ratio_b}:1 vs {ratio_a}:1")
+    print(f"Coefficient (diff in donation rate): {coef:.4f}")
+    print(f"p-value: {p_value:.4f}")
+
+compare_match_ratios(df, 1, 2)  # Compare 2:1 vs 1:1
+compare_match_ratios(df, 2, 3)
+compare_match_ratios(df, 1, 3) 
+```
+
+Same results from the above analysis. No statistical significance of values.
 
 _todo: Calculate the response rate difference between the 1:1 and 2:1 match ratios and the 2:1 and 3:1 ratios.  Do this directly from the data, and do it by computing the differences in the fitted coefficients of the previous regression. what do you conclude regarding the effectiveness of different sizes of matched donations?_
 
+```{python}
+# Response (donation) rates
+p_1 = df[df['ratio'] == 1]['gave'].mean()
+p_2 = df[df['ratio'] == 2]['gave'].mean()
+p_3 = df[df['ratio'] == 3]['gave'].mean()
+
+# Differences in raw proportions
+diff_2v1 = p_2 - p_1
+diff_3v2 = p_3 - p_2
+diff_3v1 = p_3 - p_1
+
+print(f"Direct from data:")
+print(f"2:1 vs 1:1: {diff_2v1:.4f}")
+print(f"3:1 vs 2:1: {diff_3v2:.4f}")
+print(f"3:1 vs 1:1: {diff_3v1:.4f}")
+```
+Results from data match the regression coefficients. We can safely conclude that there is no effect that match sizes have on response rates.
 
 ### Size of Charitable Contribution
 
 In this subsection, I analyze the effect of the size of matched donation on the size of the charitable contribution.
 
 _todo: Calculate a t-test or run a bivariate linear regression of the donation amount on the treatment status. What do we learn from doing this analysis?_
+```{python}
+df_reg = df[['amount', 'treatment']].dropna()
+
+X = sm.add_constant(df_reg['treatment'])
+y = df_reg['amount']
+
+model = sm.OLS(y, X).fit()
+
+coef = model.params['treatment']
+pval = model.pvalues['treatment']
+
+print(f"Treatment effect (difference in donation amount): {coef:.4f}")
+print(f"p-value: {pval:.4f}")
+```
+
+Difference of 0.15 is accurate compared to Table2A of original analysis. However, p-value is greater than 0.05, so not statistically significant.
 
 _todo: now limit the data to just people who made a donation and repeat the previous analysis. This regression allows you to analyze how much respondents donate conditional on donating some positive amount. Interpret the regression coefficients -- what did we learn? Does the treatment coefficient have a causal interpretation?_ 
 
+```{python}
+# Filter to donors only
+df_donors = df[(df['amount'] > 0) & df['treatment'].notna()][['amount', 'treatment']]
+
+X = sm.add_constant(df_donors['treatment'])
+y = df_donors['amount']
+
+model = sm.OLS(y, X).fit()
+
+coef = model.params['treatment']
+pval = model.pvalues['treatment']
+
+print(f"Treatment effect among donors: {coef:.2f}")
+print(f"p-value: {pval:.4f}")
+```
+
+Similar conclusion as above. No evidence of meaningful effect since difference is not statistically significant. Effect could even be due to random variation, not a true causal effect of treatment.
+
 _todo: Make two plots: one for the treatment group and one for the control. Each plot should be a histogram of the donation amounts only among people who donated. Add a red vertical bar or some other annotation to indicate the sample average for each plot._
 
+```{python}
+# Filter to donors only
+df_donors = df[df['amount'] > 0]
+
+# Split groups
+treatment_amounts = df_donors[df_donors['treatment'] == 1]['amount']
+control_amounts = df_donors[df_donors['control'] == 1]['amount']
+
+# Calculate means
+mean_treatment = treatment_amounts.mean()
+mean_control = control_amounts.mean()
+
+# Plot: Control Group
+plt.figure(figsize=(8, 5))
+plt.hist(control_amounts, bins=30, alpha=0.7, color='gray', edgecolor='black')
+plt.axvline(mean_control, color='red', linestyle='--', linewidth=2, label=f'Mean: ${mean_control:.2f}')
+plt.title('Donation Amounts (Control Group)')
+plt.xlabel('Donation Amount')
+plt.ylabel('Number of Donors')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Plot: Treatment Group
+plt.figure(figsize=(8, 5))
+plt.hist(treatment_amounts, bins=30, alpha=0.7, color='gray', edgecolor='black')
+plt.axvline(mean_treatment, color='red', linestyle='--', linewidth=2, label=f'Mean: ${mean_treatment:.2f}')
+plt.title('Donation Amounts (Treatment Group)')
+plt.xlabel('Donation Amount')
+plt.ylabel('Number of Donors')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+```
+Plots show very similar results.
 
 ## Simulation Experiment
 
@@ -263,12 +500,81 @@ Further suppose that the true distribution of respondents who do get a charitabl
 
 _to do:  Simulate 10,000 draws from the control distribution and 10,000 draws from the treatment distribution. You'll then calculate a vector of 10,000 differences, and then you'll plot the cumulative average of that vector of differences. This average will likely be "noisey" when only averaging a few numbers, but should "settle down" and approximate the treatment effect (0.004 = 0.022 - 0.018) as the sample size gets large. Explain the chart to the reader._
 
+```{python}
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# Step 1: Simulate 10k Bernoulli draws for each group
+n_draws = 10000
+control_draws = np.random.binomial(1, 0.018, size=n_draws)
+treatment_draws = np.random.binomial(1, 0.022, size=n_draws)
+
+# Step 2: Compute the vector of differences
+diffs = treatment_draws - control_draws  # element-wise difference
+
+# Step 3: Compute cumulative average of the differences
+cumulative_avg = np.cumsum(diffs) / np.arange(1, n_draws + 1)
+
+# Step 4: Plot cumulative average
+plt.figure(figsize=(10, 6))
+plt.plot(cumulative_avg, label='Cumulative Average Treatment Effect')
+plt.axhline(y=0.004, color='red', linestyle='--', label='True Difference (0.022 - 0.018)')
+plt.title('Cumulative Average of Simulated Treatment Effect')
+plt.xlabel('Number of Simulations')
+plt.ylabel('Cumulative Average Difference')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+```
+
+Cumulative average eventually starts to converge towards the true difference of 0.004.
 
 ### Central Limit Theorem
 
 _to do: Make 4 histograms at sample sizes 50, 200, 500, and 1000.  To do this for a sample size of e.g. 50, take 50 draws from each of the control and treatment distributions, and calculate the average difference between those draws. Then repeat that process 999 more times so that you have 1000 averages. Plot the histogram of those averages. The repeat for the other 3 histograms. Explain this sequence of histograms and its relationship to the central limit theorem to the reader._
 
+```{python}
+# Set seed
+np.random.seed(42)
 
+# Parameters
+p_control = 0.018
+p_treatment = 0.022
+n_simulations = 1000
+sample_sizes = [50, 200, 500, 1000]
+
+# Create subplots
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+axes = axes.flatten()
+
+for i, n in enumerate(sample_sizes):
+    mean_diffs = []
+    
+    for _ in range(n_simulations):
+        # Sample from each distribution
+        control_sample = np.random.binomial(1, p_control, size=n)
+        treatment_sample = np.random.binomial(1, p_treatment, size=n)
+
+        # Calculate mean difference
+        diff = treatment_sample.mean() - control_sample.mean()
+        mean_diffs.append(diff)
+    
+    # Plot histogram
+    axes[i].hist(mean_diffs, bins=30, edgecolor='black', alpha=0.75)
+    axes[i].axvline(np.mean(mean_diffs), color='red', linestyle='--', linewidth=2, label=f'Mean: {np.mean(mean_diffs):.4f}')
+    axes[i].set_title(f'Sample Size = {n}')
+    axes[i].set_xlabel('Mean Difference')
+    axes[i].set_ylabel('Frequency')
+    axes[i].legend()
+    axes[i].grid(True)
+
+# Final layout
+plt.suptitle('Sampling Distribution of Mean Differences (Treatment - Control)', fontsize=16)
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+```
+The sampling distribution takes on a bell-shape very quickly, even at sample size of 50, but gets smoothed out by the time sample size is 1000. Central Limit Theorem takes place earlier in the sequence than anticipated, approximating a normal distribution, but more filled in and smooth by 1000 sample size.
 
 
 
