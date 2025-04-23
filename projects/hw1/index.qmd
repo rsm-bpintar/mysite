@@ -12,7 +12,7 @@ Dean Karlan at Yale and John List at the University of Chicago conducted a field
 
 _to do: expand on the description of the experiment._
 
-PUblished in 2007, this experiment was inspired by America's significant increase in private charitable giving in the decades prior. It was alluded to the fact that a combination of increased wealth and an aging population in America likely caused this increase. Their analysis originally concluded that the match offer increases both the revenue per solicitation and the response rate. However, larger match ratios (i.e., $3:$1 instead of $1:$1) did not have any additional impact. It was also concluded that the matching had a much larger effect in red states than blue states.
+Published in 2007, this experiment was inspired by America's significant increase in private charitable giving in the decades prior. It was alluded to the fact that a combination of increased wealth and an aging population in America likely caused this increase. Their analysis originally concluded that the match offer increases both the revenue per solicitation and the response rate. However, larger match ratios (i.e., $3:$1 instead of $1:$1) did not have any additional impact. It was also concluded that the matching had a much larger effect in red states than blue states.
 
 This project seeks to replicate their results.
 
@@ -160,7 +160,7 @@ t_test_randomization_check(df, 'red0')
 
 ```
 
-Let's compare results with a linear regression.
+The above results confirm randomization of the experiment. There was no significant difference in the treatment and control groups regarding the number of months since last donation, the percentage of male/female participants, or participants in red/blue states, which could have affected the results. Let's compare results with a linear regression for the months since last donation variable 'mrm2' to confirm our approach.
 
 ```{python}
 import statsmodels.api as sm
@@ -185,7 +185,7 @@ print(f"t-statistic: {t_stat:.4f}")
 print(f"p-value: {p_value:.4f}")
 ```
 
-P-values match accordingly confirming method.
+The t-statistics and p-values match accordingly, confirming the method.
 
 Table 1 is included in the original report to provide evidence of randomization of the treatment and control groups. This is proven to be true, being that we fail to reject the null hypothesis with no statistically significant difference in demographics for treatment and control groups.
 
@@ -217,6 +217,8 @@ plt.ylim(0,.05)
 plt.show()
 ```
 
+Based on the bar chart above, it appears that the treatment had a slight effect on donation rates.
+
 _todo: run a t-test between the treatment and control groups on the binary outcome of whether any charitable donation was made (you can do this as a bivariate linear regression if you want). It may help to confirm your calculations match Table 2a Panel A. Report your statistical results and interpret them in the context of the experiment (e.g., if you found a difference with a small p-value or something that was statistically significant at some threshold, what have you learned about human behavior? Use mostly English words, not numbers or stats, to explain your finding.)_
 
 ```{python}
@@ -240,7 +242,7 @@ print(f"t-statistic: {t_stat:.4f}")
 print(f"p-value: {p_value:.4f}")
 ```
 
-Summary here: treatment effect is statistically significant.
+While the effect is small, it is statistically significant based on the p-value of less than .05. This implies that people in general provided donations more when told that donations would be matched.
 
 _todo: run a probit regression where the outcome variable is whether any charitable donation was made and the explanatory variable is assignment to treatment or control._ 
 
@@ -254,13 +256,12 @@ y = df_probit['gave']
 #fit probit model
 probit_model = sm.Probit(y, X).fit()
 
-print(probit_model.summary())
-
 mfx = probit_model.get_margeff()
 print(mfx.summary())
+
 ```
 
-Results indicate an increase in probability of donating by 0.43%, holding all else constant. This is consistent with the linear regression results, as effect is small. P-values also match. Treatment has a significant but modest positive effect on probability of donation.
+The probit regression indicates an increase in probability of donating by 0.43%, holding all else constant, when given the treatment (matching). This is consistent with the linear regression results, as effect is small. P-values also match, and are statistically significant. Treatment has a statistically significant but modest positive effect on probability of donation.
 
 _NOTE: Linear regression results appear replicate Table 3 column 1 in the paper. Probit results do not, despite Table 3 indicating its results come from probit regressions..._
 
@@ -323,14 +324,13 @@ def t_test_donation_rate(df, ratio_a, ratio_b, outcome_col='gave', ratio_col='ra
     else:
         print("❌ Not statistically significant at the 5% level.")
 
-t_test_donation_rate(df, 'Control', 1)
 t_test_donation_rate(df, 1, 2)  # 1:1 vs 2:1
 t_test_donation_rate(df, 2, 3)
 t_test_donation_rate(df, 1, 3)
 
 ```
 
-Author suggests that neither the match threshold or example amount had a meaningful influence on behavior. Results above suggest the same. Not enough evidence to conclude that the difference in donation rates is statistically significant.
+Author suggests that neither the different match thresholds or example amount had a meaningful influence on behavior. Results above suggest the same. Not enough evidence to conclude that the difference in donation rates is statistically significant for different treatment options.
 
 _todo: Assess the same issue using a regression. Specifically, create the variable `ratio1` then regress `gave` on `ratio1`, `ratio2`, and `ratio3` (or alternatively, regress `gave` on the categorical variable `ratio`). Interpret the coefficients and their statistical precision._
 
@@ -343,7 +343,9 @@ df['ratio2'] = (df['ratio_str'] == '2').astype(int)
 df['ratio3'] = (df['ratio_str'] == '3').astype(int)
 print(df[['ratio', 'ratio1', 'ratio2', 'ratio3']].head(10))
 ```
-Regression results.
+
+Regression results are presented below.
+
 ```{python}
 def compare_match_ratios(df, ratio_a, ratio_b, ratio_col='ratio', outcome_col='gave'):
     """
@@ -384,7 +386,7 @@ compare_match_ratios(df, 2, 3)
 compare_match_ratios(df, 1, 3) 
 ```
 
-Same results from the above analysis. No statistical significance of values.
+The regression results above indicate the same. The differences between donation rates of the different match ratios are not statistically significant, and therefore do not indicate any effect.
 
 _todo: Calculate the response rate difference between the 1:1 and 2:1 match ratios and the 2:1 and 3:1 ratios.  Do this directly from the data, and do it by computing the differences in the fitted coefficients of the previous regression. what do you conclude regarding the effectiveness of different sizes of matched donations?_
 
@@ -404,7 +406,8 @@ print(f"2:1 vs 1:1: {diff_2v1:.4f}")
 print(f"3:1 vs 2:1: {diff_3v2:.4f}")
 print(f"3:1 vs 1:1: {diff_3v1:.4f}")
 ```
-Results from data match the regression coefficients. We can safely conclude that there is no effect that match sizes have on response rates.
+
+Results from data match the regression coefficients. We can safely conclude that there is no effect that match ratios have on donation rates.
 
 ### Size of Charitable Contribution
 
@@ -426,7 +429,7 @@ print(f"Treatment effect (difference in donation amount): {coef:.4f}")
 print(f"p-value: {pval:.4f}")
 ```
 
-Difference of 0.15 is accurate compared to Table2A of original analysis. However, p-value is greater than 0.05, so not statistically significant.
+While the results from the regression analysis above indicate an increase of 0.15 in the donation amount when given the treatment letter, the p-value is not statistically significant at the 95% confidence level. However, the difference calculated is accurate compared to Table2A of original analysis. 
 
 _todo: now limit the data to just people who made a donation and repeat the previous analysis. This regression allows you to analyze how much respondents donate conditional on donating some positive amount. Interpret the regression coefficients -- what did we learn? Does the treatment coefficient have a causal interpretation?_ 
 
@@ -446,7 +449,7 @@ print(f"Treatment effect among donors: {coef:.2f}")
 print(f"p-value: {pval:.4f}")
 ```
 
-Similar conclusion as above. No evidence of meaningful effect since difference is not statistically significant. Effect could even be due to random variation, not a true causal effect of treatment.
+While the results of the above regression, only considering those who actually donated to begin with, indicate a small decrease in the donation amount, this amount is not statistically significant. Therefore, we cannot conclude that the treatment letters (those with the match ratios) have any significant causal effect on the actual donation amount. 
 
 _todo: Make two plots: one for the treatment group and one for the control. Each plot should be a histogram of the donation amounts only among people who donated. Add a red vertical bar or some other annotation to indicate the sample average for each plot._
 
@@ -486,7 +489,8 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 ```
-Plots show very similar results.
+
+The two histograms above indicate a similar average and similar distribution of donation amounts among those who donated to begin with.
 
 ## Simulation Experiment
 
@@ -528,7 +532,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Cumulative average eventually starts to converge towards the true difference of 0.004.
+Accordingly, in the simulation above, the cumulative average eventually converges towards the true difference of 0.004. As the sample size of the random simulation gets larger, the average eventually converges to the true average.
 
 ### Central Limit Theorem
 
@@ -574,7 +578,7 @@ plt.suptitle('Sampling Distribution of Mean Differences (Treatment - Control)', 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
 ```
-The sampling distribution takes on a bell-shape very quickly, even at sample size of 50, but gets smoothed out by the time sample size is 1000. Central Limit Theorem takes place earlier in the sequence than anticipated, approximating a normal distribution, but more filled in and smooth by 1000 sample size.
+When running a simulation experiment, the sampling distribution takes on a bell-shape very quickly, even at sample size of 50, but gets smoothed out by the time sample size is 1000. Central Limit Theorem takes place earlier in the sequence than anticipated, approximating a normal distribution, but more filled in and smooth by 1000 sample size.
 
 
 
