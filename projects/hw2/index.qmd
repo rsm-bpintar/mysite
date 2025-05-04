@@ -18,6 +18,7 @@ However, Blueprinty has collected data on 1,500 mature (non-startup) engineering
 ### Data
 
 _todo: Read in data._
+First, we can read in the data and do some exploratory analysis.
 
 ```{python}
 import pandas as pd
@@ -26,6 +27,7 @@ df1 = pd.read_csv('blueprinty.csv')
 df1.head()
 ```
 
+Let's compare histograms and means of number of patents by customer status.
 _todo: Compare histograms and means of number of patents by customer status. What do you observe?_
 ```{python}
 
@@ -52,7 +54,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Let's compare means to test for statistical significance.
+Histograms indicate somewhat similar results. Let's compare means to test for statistical significance.
 
 ```{python}
 from scipy.stats import ttest_ind
@@ -94,7 +96,8 @@ plt.ylabel('Density')
 plt.legend(title='Is Customer', labels=['Non-Customer', 'Customer'])
 plt.show()
 ```
-Let's run a t-test to check.
+
+There appears to be a slight difference in age between customers and non customers. Let's run a t-test to check.
 
 ```{python}
 # Separate the age values
@@ -114,8 +117,8 @@ print(f"Mean age (non-customers): {mean_age_non_customers:.2f}")
 print(f"T-statistic (age): {t_stat_age:.3f}")
 print(f"P-value (age): {p_value_age:.3f}")
 ```
-We fail to reject the null hypothesis, indicating no statistically significant difference in age between the customer and non customer groups.
-Now we repeat the process for region.
+
+We fail to reject the null hypothesis, indicating no statistically significant difference in age between the customer and non customer groups. Now we repeat the process for region.
 
 ```{python}
 # Create a count table (not normalized)
@@ -132,6 +135,7 @@ plt.legend(title='Customer Status')
 plt.tight_layout()
 plt.show()
 ```
+
 It appears based on the chart that there are some differences in the proportions of customers vs. non customers in different regions. We'll run a chi-squared test to check this.
 
 ```{python}
@@ -147,6 +151,7 @@ print("Chi-squared Statistic:", round(chi2_stat, 2))
 print("Degrees of Freedom:", dof)
 print("P-value:", round(p_value_region, 4))
 ```
+
 Based on the low p-value, we can assume there is a statistically significant relationship between region and customer status. Accordingly, the distribution of customers across regions is not random, as some are more or less likely to have customers.
 
 ### Estimation of Simple Poisson Model
@@ -155,20 +160,116 @@ Since our outcome variable of interest can only be small integer values per a se
 
 _todo: Write down mathematically the likelihood for_ $Y \sim \text{Poisson}(\lambda)$. Note that $f(Y|\lambda) = e^{-\lambda}\lambda^Y/Y!$.
 
-_todo: Code the likelihood (or log-likelihood) function for the Poisson model. This is a function of lambda and Y. For example:_
+Let's mathematically write the likelihood for_ $Y \sim \text{Poisson}(\lambda)$. Note that $f(Y|\lambda) = e^{-\lambda}\lambda^Y/Y!$.
 
-```
-poisson_loglikelihood <- function(lambda, Y){
-   ...
-}
+The likelihood for all observations is:  
+$L(\lambda \mid Y) = \prod_{i=1}^n \frac{e^{-\lambda} \lambda^{Y_i}}{Y_i!}$
+
+The log-likelihood is:  
+$\ell(\lambda \mid Y) = \sum_{i=1}^n \left( -\lambda + Y_i \log \lambda - \log(Y_i!) \right)$
+
+_todo: Code the likelihood (or log-likelihood) function for the Poisson model. This is a function of lambda and Y. For example:_
+Now let's write the log-likelihood function for the Poisson model as a function of lambda and Y.
+
+```{python}
+import numpy as np
+from scipy.special import gammaln  # log(Y!) = gammaln(Y + 1)
+
+def poisson_loglikelihood(lambd, Y):
+    """
+    Compute the log-likelihood of a Poisson model given lambda and observed data Y.
+
+    Parameters:
+    - lambd: float, the Poisson rate parameter (must be > 0)
+    - Y: array-like, observed count data
+
+    Returns:
+    - log-likelihood value
+    """
+    if lambd <= 0:
+        return -np.inf  # log-likelihood is undefined for lambda <= 0
+    return np.sum(-lambd + Y * np.log(lambd) - gammaln(Y + 1))
 ```
 
 _todo: Use your function to plot lambda on the horizontal axis and the likelihood (or log-likelihood) on the vertical axis for a range of lambdas (use the observed number of patents as the input for Y)._
 
+Now, let's use the function to plot lambda on the horizontal axis and the log-likelihood on the vertical axis for a range of lambdas.
+
+```{python}
+
+# Get observed patent data
+Y_obs = df1['patents'].values
+
+# Define a range of lambda values to evaluate
+lambda_vals = np.linspace(0.1, 20, 200)
+
+# Compute the log-likelihood for each lambda
+loglik_vals = [poisson_loglikelihood(l, Y_obs) for l in lambda_vals]
+
+# Plot the log-likelihood curve
+plt.figure(figsize=(8, 5))
+plt.plot(lambda_vals, loglik_vals, color='blue', lw=2)
+plt.title('Log-Likelihood of Poisson Model vs. Lambda')
+plt.xlabel(r'$\lambda$')
+plt.ylabel('Log-Likelihood')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+```
+
 _todo: If you're feeling mathematical, take the first derivative of your likelihood or log-likelihood, set it equal to zero and solve for lambda. You will find lambda_mle is Ybar, which "feels right" because the mean of a Poisson distribution is lambda._
+
+
+We start with the log-likelihood:
+
+We start with the log-likelihood:
+
+$$
+\ell(\lambda \mid Y) = \sum_{i=1}^n \left( -\lambda + Y_i \log \lambda - \log(Y_i!) \right)
+$$
+
+Taking the derivative:
+
+$$
+\frac{d\ell}{d\lambda} = \sum_{i=1}^n \left( -1 + \frac{Y_i}{\lambda} \right)
+= -n + \frac{1}{\lambda} \sum_{i=1}^n Y_i
+$$
+
+Set this equal to zero and solve:
+
+$$
+-n + \frac{1}{\lambda} \sum Y_i = 0 \Rightarrow \lambda = \frac{1}{n} \sum Y_i = \bar{Y}
+$$
+
+Therefore, the MLE of $\lambda$ is the sample mean $\bar{Y}$.
 
 _todo: Find the MLE by optimizing your likelihood function with optim() in R or sp.optimize() in Python._
 
+Let's find the MLE by optimizing the likelihood function.
+
+```{python}
+from scipy.optimize import minimize_scalar
+
+# Reuse observed data
+Y_obs = df1['patents'].values
+
+# Define negative log-likelihood function
+def neg_loglik_poisson(lambd):
+    return -poisson_loglikelihood(lambd, Y_obs)
+
+# Use minimize_scalar to find the lambda that minimizes negative log-likelihood
+result = minimize_scalar(neg_loglik_poisson, bounds=(0.01, 50), method='bounded')
+
+# Extract MLE
+lambda_mle_numerical = result.x
+loglik_at_mle = -result.fun
+
+print(f"MLE (Numerical): {lambda_mle_numerical:.4f}")
+print(f"Log-Likelihood at MLE: {loglik_at_mle:.4f}")
+
+# Compare to analytic MLE
+print(f"MLE (Analytic Mean): {np.mean(Y_obs):.4f}")
+```
 
 ### Estimation of Poisson Regression Model
 
