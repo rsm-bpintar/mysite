@@ -391,7 +391,18 @@ glm_model = sm.GLM(Y_numeric, X_sm, family=sm.families.Poisson())
 glm_results = glm_model.fit()
 
 # Display summary
-print(glm_results.summary())
+# Create a clean summary table
+summary_table = pd.DataFrame({
+    'Coefficient': glm_results.params,
+    'Std. Error': glm_results.bse,
+    'z value': glm_results.tvalues,
+    'P>|z|': glm_results.pvalues
+})
+
+# Optional: round for readability
+summary_table = summary_table.round(4)
+
+summary_table
 ```
 
 _todo: Interpret the results._ 
@@ -400,14 +411,39 @@ The results closely matched those from the custom maximum likelihood estimation 
 
 _todo: What do you conclude about the effect of Blueprinty's software on patent success? Because the beta coefficients are not directly interpretable, it may help to create two fake datasets: X_0 and X_1 where X_0 is the X data but with iscustomer=0 for every observation and X_1 is the X data but with iscustomer=1 for every observation. Then, use X_0 and your fitted model to get the vector of predicted number of patents (y_pred_0) for every firm in the dataset, and use X_1 to get Y_pred_1 for every firm. Then subtract y_pred_1 minus y_pred_0 and take the average of that vector of differences._
 
+We'll now try to quantify the effect of using Blueprinty's fotware by simulating predicted patent counts for the firms in our data in two scenaqrios, one where all firms are non-customers, and one where all were customers, holding all else constant. 
 
+```{python}
+# Create counterfactual datasets
+X_0 = X.copy()
+X_1 = X.copy()
 
+# Set iscustomer to 0 and 1 respectively
+X_0['iscustomer'] = 0
+X_1['iscustomer'] = 1
+# Ensure matrix and beta vector are both float64
+X0_mat = X_0.to_numpy().astype(np.float64)
+X1_mat = X_1.to_numpy().astype(np.float64)
+beta_vec = np.asarray(beta_hat, dtype=np.float64)  # just to be safe
+
+# Predict expected patent counts
+y_pred_0 = np.exp(np.dot(X0_mat, beta_vec))
+y_pred_1 = np.exp(np.dot(X1_mat, beta_vec))
+
+effect_diff = y_pred_1 - y_pred_0
+avg_effect = np.mean(effect_diff)
+
+print(f"Average predicted increase in patent count from using Blueprinty's software: {avg_effect:.3f}")
+
+```
+
+We find that the average predicted number of patents increased by about 0.973 when firms used Blueprinty's software. Resultingly, Blueprinty customers are expected to recieve one additional patent over a five year period compared to similar non-customers.
 
 ## AirBnB Case Study
 
 ### Introduction
 
-AirBnB is a popular platform for booking short-term rentals. In March 2017, students Annika Awad, Evan Lebo, and Anna Linden scraped of 40,000 Airbnb listings from New York City.  The data include the following variables:
+AirBnB is a popular platform for booking short-term rentals. In March 2017, students Annika Awad, Evan Lebo, and Anna Linden scraped off 40,000 Airbnb listings from New York City.  The data include the following variables:
 
 :::: {.callout-note collapse="true"}
 ### Variable Definitions
@@ -431,7 +467,79 @@ AirBnB is a popular platform for booking short-term rentals. In March 2017, stud
 
 _todo: Assume the number of reviews is a good proxy for the number of bookings. Perform some exploratory data analysis to get a feel for the data, handle or drop observations with missing values on relevant variables, build one or more models (e.g., a poisson regression model for the number of bookings as proxied by the number of reviews), and interpret model coefficients to describe variation in the number of reviews as a function of the variables provided._
 
+Let's load the data and clean it.
 
+```{python}
+df2 = pd.read_csv('airbnb.csv')
 
+df2.info()
+df2.describe()
+df2.isnull().sum()
+```
 
+Let's drop the null values in the non-review score columns. Since we're using number of reviews as a proxy for bookings, review_scores_... are not relevant to predict bookings since they happen after the stay. Accordingly, we won't remove all those rows with null review scores.
 
+```{python}
+# Keep only relevant, pre-booking predictors
+cols = ['number_of_reviews', 'days', 'room_type', 'bathrooms', 'bedrooms', 'price', 'instant_bookable']
+df_model = df2[cols].dropna().copy()
+```
+
+Let's now prepare the X matrix and outcome Y variables for another Poisson regression model.
+
+```{python}
+# Rescale numeric variables to improve model stability
+df_model['days'] = df_model['days'] / 100
+df_model['price'] = df_model['price'] / 100
+df_model['bathrooms'] = df_model['bathrooms'] / 10
+df_model['bedrooms'] = df_model['bedrooms'] / 10
+
+# Convert instant_bookable to binary
+df_model['instant_bookable'] = (df_model['instant_bookable'] == 't').astype(int)
+
+# One-hot encode room_type (drop first category to avoid multicollinearity)
+room_dummies = pd.get_dummies(df_model['room_type'], drop_first=True)
+
+# Combine into design matrix
+X = pd.concat([
+    df_model[['days', 'bathrooms', 'bedrooms', 'price', 'instant_bookable']],
+    room_dummies
+], axis=1)
+
+# Outcome variable
+Y = df_model['number_of_reviews']
+
+X.head()
+```
+
+Let's fit the Poisson model with statsmodels.
+
+```{python}
+import statsmodels.api as sm
+
+# Add intercept
+X_sm = sm.add_constant(X)
+
+X_sm = sm.add_constant(X).astype(float)
+Y_sm = Y.astype(float)
+
+# Fit the model
+glm_model = sm.GLM(Y, X_sm, family=sm.families.Poisson())
+glm_results = glm_model.fit()
+
+# Print results
+# Create a clean summary table
+summary_table = pd.DataFrame({
+    'Coefficient': glm_results.params,
+    'Std. Error': glm_results.bse,
+    'z value': glm_results.tvalues,
+    'P>|z|': glm_results.pvalues
+})
+
+# Optional: round for readability
+summary_table = summary_table.round(4)
+
+summary_table
+```
+
+Based on the output above, the Poisson regression results show several strong predictors of bookings (per the reviews proxy) Listings that are instant bookable recieve almost 50% more bookings, holding other features constant. More bedrooms are also strongly associated with more bookings, whereas higher prices are associated with fewer bookings. Listings classified as private rooms or shared rooms have fewer bookings compared to entire homes. While number of days a listing has been active is positively associated with bookings, this could be a reflection of the cumulative exposure over time.
