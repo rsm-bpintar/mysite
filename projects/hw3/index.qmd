@@ -151,7 +151,7 @@ task_ids = df_design['task'].values
 # Show a preview of the prepared design matrix
 df_prepared = df_design[['respondent', 'task'] + X_columns + ['choice']]
 ```
-
+::::
 
 ## 4. Estimation via Maximum Likelihood
 
@@ -224,6 +224,7 @@ results_df = pd.DataFrame({
 
 results_df
 ```
+::::
 
 The table above reports the estimated part-worth utilities for each attribute level in the multinomial logit (MNL) model. All four coefficients are statistically significant at the 95% confidence level, as none of their confidence intervals include zero. The signs and magnitudes of the estimates align with economic intuition and the true values used in the simulation.
 
