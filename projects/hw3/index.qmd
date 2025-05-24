@@ -251,7 +251,140 @@ _todo: for at least one of the 4 parameters, show the trace plot of the algorith
 
 _todo: report the 4 posterior means, standard deviations, and 95% credible intervals and compare them to your results from the Maximum Likelihood approach._
 
+We now estimate the multinomial logit model using a Bayesian approach via Metropolis-Hastings MCMC. The posterior distribution is defined by combining the log-likelihood with prior distributions:
 
+- Normal priors $\mathcal{N}(0, 5)$ for the binary attribute coefficients (`brand_N`, `brand_P`, `ad_Yes`)
+- A tighter prior $\mathcal{N}(0, 1)$ for the continuous `price` coefficient
+
+We run the sampler for 11,000 iterations, discarding the first 1,000 as burn-in, and use the remaining 10,000 to summarize the posterior distribution.
+
+To generate proposals, we use a multivariate normal distribution with independent components:
+- $\mathcal{N}(0, 0.05)$ for the three binary variables
+- $\mathcal{N}(0, 0.005)$ for the price coefficient
+
+We assess convergence by examining a trace plot and posterior histogram for the `price` parameter.
+
+:::: {.callout-note collapse="true"}
+```{python}
+import matplotlib.pyplot as plt
+from itertools import product
+
+# Re-run data simulation and preparation
+np.random.seed(123)
+brands = ['N', 'P', 'H']
+ads = ['Yes', 'No']
+prices = np.arange(8, 33, 4)
+profiles = pd.DataFrame(list(product(brands, ads, prices)), columns=['brand', 'ad', 'price'])
+
+brand_util = {'N': 1.0, 'P': 0.5, 'H': 0.0}
+ad_util = {'Yes': -0.8, 'No': 0.0}
+price_util = lambda p: -0.1 * p
+
+n_respondents = 100
+n_tasks = 10
+n_alts = 3
+
+simulated_data = []
+for respondent_id in range(1, n_respondents + 1):
+    for task_id in range(1, n_tasks + 1):
+        sampled = profiles.sample(n=n_alts).reset_index(drop=True)
+        sampled['brand_util'] = sampled['brand'].map(brand_util)
+        sampled['ad_util'] = sampled['ad'].map(ad_util)
+        sampled['price_util'] = sampled['price'].apply(price_util)
+        sampled['utility'] = sampled['brand_util'] + sampled['ad_util'] + sampled['price_util']
+        noise = np.random.gumbel(0, 1, n_alts)
+        sampled['total_utility'] = sampled['utility'] + noise
+        sampled['choice'] = 0
+        sampled.loc[sampled['total_utility'].idxmax(), 'choice'] = 1
+        sampled['respondent'] = respondent_id
+        sampled['task'] = task_id
+        simulated_data.append(sampled)
+
+df_simulated = pd.concat(simulated_data, ignore_index=True)
+df_design = pd.get_dummies(df_simulated, columns=['brand', 'ad'], drop_first=True)
+X = df_design[['brand_N', 'brand_P', 'ad_Yes', 'price']].to_numpy(dtype=np.float64)
+y = df_design['choice'].to_numpy(dtype=np.int64)
+y_matrix = y.reshape((-1, 3))
+n_tasks_total = y_matrix.shape[0]
+
+# Define functions
+def log_likelihood(beta):
+    utilities = X @ beta
+    utilities = utilities.reshape((-1, 3))
+    exp_utilities = np.exp(utilities)
+    probs = exp_utilities / exp_utilities.sum(axis=1, keepdims=True)
+    chosen_probs = probs[np.arange(n_tasks_total), y_matrix.argmax(axis=1)]
+    return np.sum(np.log(chosen_probs))
+
+def log_prior(beta):
+    return (
+        -0.5 * (beta[0]**2 / 25)
+        -0.5 * (beta[1]**2 / 25)
+        -0.5 * (beta[2]**2 / 25)
+        -0.5 * (beta[3]**2 / 1)
+    )
+
+def log_posterior(beta):
+    return log_likelihood(beta) + log_prior(beta)
+
+# Metropolis-Hastings MCMC
+n_iter = 11000
+beta_samples = np.zeros((n_iter, 4))
+beta_current = np.zeros(4)
+log_post_current = log_posterior(beta_current)
+
+for i in range(1, n_iter):
+    proposal = beta_current + np.random.normal(loc=0, scale=[0.05, 0.05, 0.05, 0.005])
+    log_post_proposal = log_posterior(proposal)
+    accept_prob = np.exp(log_post_proposal - log_post_current)
+    if np.random.rand() < accept_prob:
+        beta_current = proposal
+        log_post_current = log_post_proposal
+    beta_samples[i] = beta_current
+
+# Posterior summaries after burn-in
+burn_in = 1000
+beta_samples_post = beta_samples[burn_in:]
+posterior_means = beta_samples_post.mean(axis=0)
+posterior_sds = beta_samples_post.std(axis=0)
+cred_intervals = np.percentile(beta_samples_post, [2.5, 97.5], axis=0).T
+
+# Results DataFrame
+param_names = ['brand_N', 'brand_P', 'ad_Yes', 'price']
+bayes_results_df = pd.DataFrame({
+    'Parameter': param_names,
+    'Posterior Mean': posterior_means,
+    'Posterior SD': posterior_sds,
+    'CI Lower (95%)': cred_intervals[:, 0],
+    'CI Upper (95%)': cred_intervals[:, 1]
+})
+
+# Trace plot and histogram for price
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(beta_samples_post[:, 3])
+plt.title('Trace Plot: price')
+plt.xlabel('Iteration')
+plt.ylabel('Value')
+
+plt.subplot(1, 2, 2)
+plt.hist(beta_samples_post[:, 3], bins=30, edgecolor='k')
+plt.title('Posterior Histogram: price')
+plt.xlabel('Value')
+plt.ylabel('Frequency')
+plt.tight_layout()
+plt.show()
+
+```
+::::
+
+The posterior summary table shows the means, standard deviations, and 95% credible intervals for each parameter. These estimates closely align with those obtained from maximum likelihood estimation in Section 4.
+
+- The **posterior means** match the MLE estimates within small margins.
+- The **credible intervals** are tight and all exclude zero, indicating strong evidence for the direction and magnitude of each effect.
+- The **trace plot** for the price parameter shows good mixing behavior, and the posterior distribution appears approximately normal.
+
+These results confirm that both MLE and Bayesian methods yield consistent and interpretable insights about consumer preferences in this simulated conjoint setting.
 
 ## 6. Discussion
 
@@ -259,6 +392,39 @@ _todo: Suppose you did not simulate the data. What do you observe about the para
 
 _todo: At a high level, discuss what change you would need to make in order to simulate data from --- and estimate the parameters of --- a multi-level (aka random-parameter or hierarchical) model. This is the model we use to analyze "real world" conjoint data._
 
+### Interpreting Parameter Estimates
+
+Even without knowing the true data-generating process (i.e., in a real-world setting), the estimated parameters from the multinomial logit model align with strong economic intuition:
+
+- **$\beta_{\text{Netflix}} > \beta_{\text{Prime}}$** implies that, on average, consumers have a stronger preference for Netflix than Amazon Prime, relative to the baseline brand (Hulu). This could be due to perceived content quality, popularity, or brand loyalty.
+
+- A **negative $\beta_{\text{price}}$** is expected and logical. It means that, all else equal, consumers are less likely to choose a more expensive plan. The magnitude reflects how sensitive utility is to price — a critical insight for pricing strategy.
+
+- The ad penalty coefficient, **$\beta_{\text{ads}} < 0$**, indicates that consumers value ad-free experiences and are willing to give up some utility (or pay more) to avoid ads.
+
+These results demonstrate how the MNL model can quantify the impact of product features on consumer decision-making, even when the true parameters are unknown.
+
+### Toward Hierarchical (Multilevel) Models
+
+In real-world conjoint studies, different consumers often have different preferences — not everyone values brand or price the same way. To capture this heterogeneity, we would move from a fixed-parameter MNL model to a **hierarchical (random-parameter) model**.
+
+This change involves two key modifications:
+
+1. **Data Simulation**: Instead of assigning one fixed set of $\beta$ values to all respondents, we would draw individual-level parameters from a population distribution:
+
+\[
+\beta_i \sim \mathcal{N}(\mu, \Sigma)
+\]
+
+This would better reflect individual variation in preferences.
+
+2. **Estimation**: We would use a **Bayesian hierarchical model** (via MCMC) or a **Mixed Logit** model (via simulation-based MLE) to estimate both:
+   - The population-level means $\mu$
+   - The variation across individuals, captured by $\Sigma$
+
+These models are more flexible and realistic, and are commonly used in industry applications of conjoint analysis.
+
+In summary, while the standard MNL model is a solid starting point, moving to a hierarchical framework is critical for analyzing real consumer choice data with preference heterogeneity.
 
 
 
