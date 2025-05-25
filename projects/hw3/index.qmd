@@ -132,8 +132,9 @@ The "hard part" of the MNL likelihood function is organizing the data, as we nee
 
 _todo: reshape and prep the data_
 
-:::: {.callout-note collapse="true"}
 ```{python}
+#| code-fold: true
+#| code-summary: "Show code"
 # One-hot encode brand and ad (drop the reference levels: brand_H and ad_No)
 df_design = pd.get_dummies(df_simulated, columns=['brand', 'ad'], drop_first=True)
 
@@ -151,7 +152,6 @@ task_ids = df_design['task'].values
 # Show a preview of the prepared design matrix
 df_prepared = df_design[['respondent', 'task'] + X_columns + ['choice']]
 ```
-::::
 
 ## 4. Estimation via Maximum Likelihood
 
@@ -169,8 +169,9 @@ The estimated coefficients correspond to:
 
 We also compute standard errors from the inverse Hessian matrix and report 95% confidence intervals for each parameter estimate.
 
-:::: {.callout-note collapse="true"}
 ```{python}
+#| code-fold: true
+#| code-summary: "Show code"
 # Re-import necessary packages after code execution state reset
 import numpy as np
 import pandas as pd
@@ -224,7 +225,6 @@ results_df = pd.DataFrame({
 
 results_df
 ```
-::::
 
 The table above reports the estimated part-worth utilities for each attribute level in the multinomial logit (MNL) model. All four coefficients are statistically significant at the 95% confidence level, as none of their confidence intervals include zero. The signs and magnitudes of the estimates align with economic intuition and the true values used in the simulation.
 
@@ -264,8 +264,9 @@ To generate proposals, we use a multivariate normal distribution with independen
 
 We assess convergence by examining a trace plot and posterior histogram for the `price` parameter.
 
-:::: {.callout-note collapse="true"}
 ```{python}
+#| code-fold: true
+#| code-summary: "Show code"
 import matplotlib.pyplot as plt
 from itertools import product
 
@@ -376,7 +377,6 @@ plt.tight_layout()
 plt.show()
 
 ```
-::::
 
 The posterior summary table shows the means, standard deviations, and 95% credible intervals for each parameter. These estimates closely align with those obtained from maximum likelihood estimation in Section 4.
 
