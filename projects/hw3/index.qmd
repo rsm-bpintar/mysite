@@ -344,8 +344,6 @@ bayes_results_df = pd.DataFrame({
     'CI Upper (95%)': cred_intervals[:, 1]
 })
 
-bayes_results_df.head()
-
 # Trace plot and histogram for price
 plt.figure(figsize=(12, 5))
 plt.subplot(1, 2, 1)
@@ -362,6 +360,8 @@ plt.ylabel('Frequency')
 plt.tight_layout()
 plt.show()
 
+
+bayes_results_df.head()
 ```
 
 The posterior summary table shows the means, standard deviations, and 95% credible intervals for each parameter. These estimates closely align with those obtained from maximum likelihood estimation in Section 4.
