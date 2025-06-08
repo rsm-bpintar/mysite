@@ -301,6 +301,7 @@ This is a simple and intuitive measure of importance, though it doesn't account 
 #| code-fold: true
 #| code-summary: "Compute Pearson correlations"
 import numpy as np
+from IPython.display import display
 
 # Compute correlations between each column in X and y
 pearson_corr = X.corrwith(y)
@@ -308,7 +309,7 @@ pearson_corr = X.corrwith(y)
 # Convert to DataFrame for later merging
 pearson_df = pearson_corr.to_frame(name="Pearson Correlation")
 pearson_df = pearson_df.sort_values(by="Pearson Correlation", ascending=False)
-pearson_df
+display(pearson_df)
 
 ```
 
@@ -341,7 +342,7 @@ std_coef_df = pd.DataFrame({
     "Standardized Coefficient": lr.coef_
 }, index=X.columns).sort_values(by="Standardized Coefficient", ascending=False)
 
-std_coef_df
+display(std_coef_df)
 ```
 
 ### Usefulness: Univariate R²
@@ -367,7 +368,7 @@ for col in X.columns:
 usefulness_df = pd.DataFrame.from_dict(r2_scores, orient="index", columns=["Usefulness (R²)"])
 usefulness_df = usefulness_df.sort_values(by="Usefulness (R²)", ascending=False)
 
-usefulness_df
+display(usefulness_df)
 
 ```
 
@@ -475,7 +476,7 @@ johnson_df = pd.DataFrame({
     "Johnson's Relative Weight": rel_weights
 }, index=X.columns).sort_values(by="Johnson's Relative Weight", ascending=False)
 
-johnson_df
+display(johnson_df)
 
 ```
 
@@ -503,7 +504,7 @@ rf_df = pd.DataFrame({
     "Random Forest (Gini Importance)": rf_importances
 }, index=X.columns).sort_values(by="Random Forest (Gini Importance)", ascending=False)
 
-rf_df
+display(rf_df)
 
 ```
 
@@ -551,7 +552,7 @@ summary_df = (
 # Round for readability
 summary_df_rounded = summary_df.round(3)
 
-summary_df_rounded
+display(summary_df_rounded)
 ```
 
 

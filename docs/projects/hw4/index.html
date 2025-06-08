@@ -491,14 +491,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <details class="code-fold">
 <summary>Compute Pearson correlations</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute correlations between each column in X and y</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>pearson_corr <span class="op">=</span> X.corrwith(y)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to DataFrame for later merging</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>pearson_df <span class="op">=</span> pearson_corr.to_frame(name<span class="op">=</span><span class="st">"Pearson Correlation"</span>)</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>pearson_df <span class="op">=</span> pearson_df.sort_values(by<span class="op">=</span><span class="st">"Pearson Correlation"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>pearson_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute correlations between each column in X and y</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>pearson_corr <span class="op">=</span> X.corrwith(y)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to DataFrame for later merging</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>pearson_df <span class="op">=</span> pearson_corr.to_frame(name<span class="op">=</span><span class="st">"Pearson Correlation"</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>pearson_df <span class="op">=</span> pearson_df.sort_values(by<span class="op">=</span><span class="st">"Pearson Correlation"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>display(pearson_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           Pearson Correlation
@@ -949,7 +950,7 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Standardized Coefficient"</span>: lr.coef_</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>X.columns).sort_values(by<span class="op">=</span><span class="st">"Standardized Coefficient"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>std_coef_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>display(std_coef_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           Standardized Coefficient
@@ -1394,7 +1395,7 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>usefulness_df <span class="op">=</span> pd.DataFrame.from_dict(r2_scores, orient<span class="op">=</span><span class="st">"index"</span>, columns<span class="op">=</span>[<span class="st">"Usefulness (R²)"</span>])</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>usefulness_df <span class="op">=</span> usefulness_df.sort_values(by<span class="op">=</span><span class="st">"Usefulness (R²)"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>usefulness_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>display(usefulness_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           Usefulness (R²)
@@ -1524,7 +1525,7 @@ impact    0.11617944</code></pre>
 <span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Johnson's Relative Weight"</span>: rel_weights</span>
 <span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>X.columns).sort_values(by<span class="op">=</span><span class="st">"Johnson's Relative Weight"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>johnson_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>display(johnson_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           Johnson's Relative Weight
@@ -1971,7 +1972,7 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Random Forest (Gini Importance)"</span>: rf_importances</span>
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>X.columns).sort_values(by<span class="op">=</span><span class="st">"Random Forest (Gini Importance)"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>rf_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>display(rf_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           Random Forest (Gini Importance)
@@ -2029,7 +2030,7 @@ differs                           0.100151</code></pre>
 <span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Round for readability</span></span>
 <span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>summary_df_rounded <span class="op">=</span> summary_df.<span class="bu">round</span>(<span class="dv">3</span>)</span>
 <span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>summary_df_rounded</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>display(summary_df_rounded)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           Pearson Correlation  ...  Random Forest (Gini Importance)
