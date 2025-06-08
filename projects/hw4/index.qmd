@@ -4,18 +4,10 @@ author: "Brian Pintar"
 date: today
 ---
 
-_todo: do two analyses.  Do one of either 1a or 1b, AND one of either 2a or 2b._
 
+## K-Means Clustering: Implemented from Scratch
 
-## 1a. K-Means
-
-_todo: write your own code to implement the k-means algorithm.  Make plots of the various steps the algorithm takes so you can "see" the algorithm working.  Test your algorithm on the Palmer Penguins dataset, specifically using the bill length and flipper length variables.  Compare your results to the built-in `kmeans` function in R or Python._
-
-_todo: Calculate both the within-cluster-sum-of-squares and silhouette scores (you can use built-in functions to do so) and plot the results for various numbers of clusters (ie, K=2,3,...,7). What is the "right" number of clusters as suggested by these two metrics?_
-
-_If you want a challenge, add your plots as an animated gif on your website so that the result looks something like [this](https://www.youtube.com/shorts/XCsoWZU9oN8)._
-
-I implement the K-Means clustering algorithm **from scratch** and apply it to the Palmer Penguins dataset.
+In this post, I implement the K-Means clustering algorithm **from scratch** and apply it to the Palmer Penguins dataset.
 
 The goal is to:
 1. Write the K-Means algorithm by hand in Python.
@@ -24,17 +16,23 @@ The goal is to:
 4. Evaluate model performance using **within-cluster sum of squares (WCSS)** and **silhouette scores**.
 5. Determine the “right” number of clusters.
 
-We'll use two features: **bill length** and **flipper length** — a natural fit for 2D visualization of clustering in action.
+We’ll use two features: **bill length** and **flipper length** — a natural fit for 2D visualization of clustering in action.
 
-K-Means is an **unsupervised machine learning** algorithm that partitions data into `K` clusters, where each data point belongs to the cluster with the nearest mean.
+---
 
-The algorithm follows these steps:
+How the Algorithm Works:
+
+K-Means is an **unsupervised learning** algorithm that partitions data into `K` clusters. The algorithm seeks to minimize the **within-cluster sum of squares (WCSS)** and follows these steps:
+
 1. Randomly initialize `K` centroids.
-2. Assign each data point to the closest centroid (based on Euclidean distance).
-3. Recompute centroids as the mean of points assigned to each cluster.
-4. Repeat steps 2–3 until convergence (centroids stop moving or max iterations is reached).
+2. Assign each data point to the nearest centroid.
+3. Recompute each centroid based on current cluster assignments.
+4. Repeat until centroids converge or max iterations is reached.
 
-It’s a classic example of an **iterative optimization algorithm** that seeks to minimize the total **within-cluster sum of squares** (WCSS).
+---
+
+Step 1: Implementing K-Means in Python:
+
 
 ```{python}
 #| code-fold: true
@@ -43,21 +41,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def initialize_centroids(X, k):
-    """Randomly initialize k centroids from the data."""
     indices = np.random.choice(len(X), size=k, replace=False)
     return X[indices]
 
 def assign_clusters(X, centroids):
-    """Assign each point to the nearest centroid."""
     distances = np.linalg.norm(X[:, np.newaxis] - centroids, axis=2)
     return np.argmin(distances, axis=1)
 
 def update_centroids(X, labels, k):
-    """Recompute centroids as the mean of all points in each cluster."""
     return np.array([X[labels == i].mean(axis=0) for i in range(k)])
 
 def kmeans(X, k, max_iters=100, tol=1e-4):
-    """Full K-Means clustering algorithm."""
     centroids = initialize_centroids(X, k)
     for i in range(max_iters):
         old_centroids = centroids
@@ -79,37 +73,59 @@ Now let’s test it on the **Palmer Penguins** dataset.
 ```{python}
 #| code-fold: true
 #| code-summary: "Show code"
+
+#| code-fold: true
+#| code-summary: "Show code"
 import seaborn as sns
 import pandas as pd
 
-# Load the penguins dataset
 penguins = sns.load_dataset("penguins").dropna(subset=["bill_length_mm", "flipper_length_mm"])
 X = penguins[["bill_length_mm", "flipper_length_mm"]].values
 
-# Visualize raw data
 plt.figure(figsize=(6, 5))
 plt.scatter(X[:, 0], X[:, 1], c='gray', edgecolor='black')
 plt.xlabel("Bill Length (mm)")
 plt.ylabel("Flipper Length (mm)")
 plt.title("Palmer Penguins: Bill Length vs Flipper Length")
 plt.show()
+
 ```
 
-We use the `seaborn` penguins dataset and select two continuous variables: **bill length** and **flipper length**.
+To better understand how K-Means converges, I modified the algorithm to store the centroids and cluster labels at each iteration.
 
-This makes it easy to visualize clustering in 2D.
+Executing such visualization here:
 
 ```{python}
 #| code-fold: true
 #| code-summary: "Show code"
+def kmeans_with_plot(X, k, max_iters=10):
+    centroids = initialize_centroids(X, k)
+    history = []
+    for i in range(max_iters):
+        labels = assign_clusters(X, centroids)
+        history.append((centroids.copy(), labels.copy()))
+        new_centroids = update_centroids(X, labels, k)
+        if np.allclose(new_centroids, centroids):
+            break
+        centroids = new_centroids
+    history.append((centroids.copy(), labels.copy()))
+    return history
 
-# Set number of clusters
+```
+
+Each frame above shows the K-Means algorithm as it:
+- Reassigns data points to the nearest centroid
+- Moves centroids to the mean of their assigned points
+- Gradually stabilizes and stops updating
+
+This visualization helps demonstrate how K-Means converges over a few iterations. It's especially helpful for building intuition around how cluster boundaries emerge.
+
+```{python}
+#| code-fold: true
+#| code-summary: "Show code"
 k = 3
-
-# Run custom K-Means
 centroids, labels = kmeans(X, k)
 
-# Plot clusters
 plt.figure(figsize=(6, 5))
 for i in range(k):
     cluster_points = X[labels == i]
@@ -120,8 +136,11 @@ plt.ylabel("Flipper Length (mm)")
 plt.title("Clusters Found by Custom K-Means")
 plt.legend()
 plt.show()
-
 ```
+
+We use the `seaborn` penguins dataset and select two continuous variables: **bill length** and **flipper length**.
+
+This makes it easy to visualize clustering in 2D.
 
 We choose `k=3` and run our K-Means function.
 
@@ -130,14 +149,12 @@ Each cluster is color-coded, and the final centroids are marked with black X’s
 ```{python}
 #| code-fold: true
 #| code-summary: "Show code"
-
 from sklearn.cluster import KMeans
 
 kmeans_sklearn = KMeans(n_clusters=3, random_state=42).fit(X)
 labels_sklearn = kmeans_sklearn.labels_
 centroids_sklearn = kmeans_sklearn.cluster_centers_
 
-# Plot built-in results
 plt.figure(figsize=(6, 5))
 for i in range(3):
     plt.scatter(X[labels_sklearn == i, 0], X[labels_sklearn == i, 1], label=f'Cluster {i}')
@@ -155,19 +172,17 @@ Here’s a comparison using `sklearn`’s `KMeans`. The cluster separation and c
 ```{python}
 #| code-fold: true
 #| code-summary: "Show code"
-
 from sklearn.metrics import silhouette_score
 
 wcss = []
 silhouettes = []
-
 K_range = range(2, 8)
+
 for k in K_range:
     km = KMeans(n_clusters=k, random_state=42).fit(X)
     wcss.append(km.inertia_)
     silhouettes.append(silhouette_score(X, km.labels_))
 
-# Plot WCSS (Elbow)
 plt.figure()
 plt.plot(K_range, wcss, marker='o')
 plt.title("Elbow Plot (WCSS)")
@@ -175,15 +190,12 @@ plt.xlabel("Number of Clusters (K)")
 plt.ylabel("Within-Cluster Sum of Squares")
 plt.show()
 
-# Plot Silhouette Scores
 plt.figure()
 plt.plot(K_range, silhouettes, marker='s')
 plt.title("Silhouette Score vs K")
 plt.xlabel("Number of Clusters (K)")
 plt.ylabel("Silhouette Score")
 plt.show()
-
-
 ```
 
 We calculate:
