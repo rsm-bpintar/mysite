@@ -552,7 +552,8 @@ summary_df = (
 # Round for readability
 summary_df_rounded = summary_df.round(3)
 
-display(summary_df_rounded)
+from IPython.core.display import HTML
+HTML(summary_df_rounded.to_html(classes="table table-striped"))
 ```
 
 

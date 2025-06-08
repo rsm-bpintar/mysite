@@ -2030,21 +2030,106 @@ differs                           0.100151</code></pre>
 <span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Round for readability</span></span>
 <span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>summary_df_rounded <span class="op">=</span> summary_df.<span class="bu">round</span>(<span class="dv">3</span>)</span>
 <span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>display(summary_df_rounded)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.core.display <span class="im">import</span> HTML</span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>HTML(summary_df_rounded.to_html(classes<span class="op">=</span><span class="st">"table table-striped"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stdout">
-<pre><code>           Pearson Correlation  ...  Random Forest (Gini Importance)
-appealing                0.214  ...                            0.122
-rewarding                0.201  ...                            0.121
-easy                     0.174  ...                            0.102
-impact                   0.170  ...                            0.113
-trust                    0.161  ...                            0.102
-popular                  0.150  ...                            0.112
-service                  0.147  ...                            0.110
-differs                  0.092  ...                            0.100
-build                    0.048  ...                            0.118
-
-[9 rows x 6 columns]</code></pre>
+<div class="cell-output-display">
+<table class="dataframe table table-striped caption-top table-sm small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pearson Correlation</th>
+<th data-quarto-table-cell-role="th">Standardized Coefficient</th>
+<th data-quarto-table-cell-role="th">Usefulness (R²)</th>
+<th data-quarto-table-cell-role="th">Shapley Value (LMG)</th>
+<th data-quarto-table-cell-role="th">Johnson's Relative Weight</th>
+<th data-quarto-table-cell-role="th">Random Forest (Gini Importance)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">appealing</td>
+<td>0.214</td>
+<td>0.127</td>
+<td>0.046</td>
+<td>0.226</td>
+<td>0.227</td>
+<td>0.122</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">rewarding</td>
+<td>0.201</td>
+<td>0.127</td>
+<td>0.041</td>
+<td>0.214</td>
+<td>0.230</td>
+<td>0.121</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">easy</td>
+<td>0.174</td>
+<td>0.045</td>
+<td>0.030</td>
+<td>0.099</td>
+<td>0.029</td>
+<td>0.102</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">impact</td>
+<td>0.170</td>
+<td>0.083</td>
+<td>0.029</td>
+<td>0.116</td>
+<td>0.097</td>
+<td>0.113</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">trust</td>
+<td>0.161</td>
+<td>0.047</td>
+<td>0.026</td>
+<td>0.084</td>
+<td>0.032</td>
+<td>0.102</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">popular</td>
+<td>0.150</td>
+<td>0.057</td>
+<td>0.023</td>
+<td>0.089</td>
+<td>0.047</td>
+<td>0.112</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">service</td>
+<td>0.147</td>
+<td>0.042</td>
+<td>0.022</td>
+<td>0.065</td>
+<td>0.025</td>
+<td>0.110</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">differs</td>
+<td>0.092</td>
+<td>-0.063</td>
+<td>0.009</td>
+<td>0.028</td>
+<td>0.057</td>
+<td>0.100</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">build</td>
+<td>0.048</td>
+<td>-0.135</td>
+<td>0.002</td>
+<td>0.079</td>
+<td>0.257</td>
+<td>0.118</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </section>
