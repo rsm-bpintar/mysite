@@ -98,6 +98,8 @@ Executing such visualization here:
 ```{python}
 #| code-fold: true
 #| code-summary: "Show code"
+from matplotlib.animation import FuncAnimation
+
 def kmeans_with_plot(X, k, max_iters=10):
     centroids = initialize_centroids(X, k)
     history = []
@@ -111,7 +113,30 @@ def kmeans_with_plot(X, k, max_iters=10):
     history.append((centroids.copy(), labels.copy()))
     return history
 
+# Run it and store the steps
+history = kmeans_with_plot(X, k=3)
+
+# Animate it
+fig, ax = plt.subplots(figsize=(6, 5))
+
+def animate(i):
+    ax.clear()
+    centroids, labels = history[i]
+    for j in range(len(centroids)):
+        ax.scatter(X[labels == j, 0], X[labels == j, 1], label=f"Cluster {j}")
+    ax.scatter(centroids[:, 0], centroids[:, 1], c='black', marker='x', s=100, label='Centroids')
+    ax.set_title(f"K-Means Iteration {i}")
+    ax.set_xlabel("Bill Length (mm)")
+    ax.set_ylabel("Flipper Length (mm)")
+    ax.legend()
+
+ani = FuncAnimation(fig, animate, frames=len(history), interval=1000, repeat=False)
+
+# Save the animation to your output folder (this file must exist in same dir)
+ani.save("kmeans_penguins_animation.mp4", writer='ffmpeg')
+
 ```
+> ![](kmeans_penguins_animation.mp4)
 
 Each frame above shows the K-Means algorithm as it:
 - Reassigns data points to the nearest centroid
