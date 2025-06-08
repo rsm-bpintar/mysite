@@ -2,6 +2,8 @@
 title: "Machine Learning"
 author: "Brian Pintar"
 date: today
+engine: knitr
+jupyter: python3
 ---
 
 
@@ -31,7 +33,7 @@ K-Means is an **unsupervised learning** algorithm that partitions data into `K` 
 
 ---
 
-Step 1: Implementing K-Means in Python:
+Implementing K-Means in Python:
 
 
 ```{python}
@@ -236,14 +238,235 @@ The optimal number of clusters based on both metrics appears to be **3**, which 
 This hands-on implementation helped solidify my understanding of clustering mechanics — and provided great visuals for exploring the algorithm step-by-step.
 
 
-## 2b. Key Drivers Analysis
+## Key Drivers Analysis: What Influences Satisfaction
 
 _todo: replicate the table on slide 75 of the session 5 slides. Specifically, using the dataset provided in the file data_for_drivers_analysis.csv, calculate: pearson correlations, standardized regression coefficients, "usefulness", Shapley values for a linear regression, Johnson's relative weights, and the mean decrease in the gini coefficient from a random forest. You may use packages built into R or Python; you do not need to perform these calculations "by hand."_
 
 _If you want a challenge, add additional measures to the table such as the importance scores from XGBoost, from a Neural Network, or from any additional method that measures the importance of variables._
 
 
+In this section, I replicate a key drivers analysis from class to explore which perceptual attributes most strongly explain **satisfaction** for **Brand 1**.
 
+The dataset includes survey responses where each row represents a customer and the columns include:
+- A set of **perception variables** (e.g., trust, ease of use, appeal)
+- A **satisfaction score** (the target variable we aim to explain)
 
+I perform a **Key Drivers Analysis** using six different variable importance metrics, each of which offers a unique lens for interpreting what matters most:
+1. **Pearson Correlation**
+2. **Standardized Regression Coefficients**
+3. **Usefulness** (R² from univariate regressions)
+4. **Shapley Values (LMG)**
+5. **Johnson's Relative Weights**
+6. **Random Forest Gini Importance**
 
+This helps compare **statistical**, **machine learning**, and **variance decomposition** approaches to identifying the strongest drivers of customer satisfaction.
 
+For simplicity and clarity, I focus on **Brand 1** only.
+
+Let's load and filter the data.
+
+```{python}
+#| code-fold: true
+#| code-summary: "Load and filter Brand 1 data"
+import pandas as pd
+
+# Load the dataset
+df = pd.read_csv("data_for_drivers_analysis.csv")
+
+# Filter to just Brand 1
+df_brand1 = df[df["brand"] == 1].copy()
+
+# Define predictors and target
+X = df_brand1.drop(columns=["brand", "id", "satisfaction"])
+y = df_brand1["satisfaction"]
+
+```
+
+### Pearson Correlation
+
+The Pearson correlation measures the **linear relationship** between each perception variable and satisfaction. It ranges from -1 to +1:
+- A positive value means the perception increases as satisfaction increases.
+- A larger absolute value means a stronger relationship.
+
+This is a simple and intuitive measure of importance, though it doesn't account for interactions or multicollinearity.
+
+```{python}
+#| code-fold: true
+#| code-summary: "Compute Pearson correlations"
+import numpy as np
+
+# Compute correlations between each column in X and y
+pearson_corr = X.corrwith(y)
+
+# Convert to DataFrame for later merging
+pearson_df = pearson_corr.to_frame(name="Pearson Correlation")
+pearson_df = pearson_df.sort_values(by="Pearson Correlation", ascending=False)
+pearson_df
+
+```
+
+### Standardized Regression Coefficients
+
+This method involves fitting a **linear regression** on standardized variables (z-scores). Standardizing ensures that all predictors are on the same scale, so we can directly compare the magnitude of their coefficients.
+
+Larger coefficients (in absolute value) indicate variables that contribute more to predicting satisfaction. This approach adjusts for **collinearity** better than Pearson correlation, but it still assumes a linear and additive relationship.
+
+Below are the standardized coefficients for each perception variable:
+
+```{python}
+#| code-fold: true
+#| code-summary: "Standardized regression coefficients"
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+# Standardize X and y
+scaler_X = StandardScaler()
+scaler_y = StandardScaler()
+X_std = scaler_X.fit_transform(X)
+y_std = scaler_y.fit_transform(y.values.reshape(-1, 1)).ravel()
+
+# Fit linear regression
+lr = LinearRegression()
+lr.fit(X_std, y_std)
+
+# Store coefficients
+std_coef_df = pd.DataFrame({
+    "Standardized Coefficient": lr.coef_
+}, index=X.columns).sort_values(by="Standardized Coefficient", ascending=False)
+
+std_coef_df
+```
+
+### Usefulness: Univariate R²
+
+"Usefulness" is measured by the **R² value** from a simple linear regression using each predictor individually. It tells us how much of the variance in satisfaction can be explained by that predictor alone — without adjusting for overlap with other variables.
+
+This metric is easy to interpret and useful for identifying high-signal variables, though it can be misleading if predictors are strongly correlated with each other.
+
+Here are the results for Brand 1:
+
+```{python}
+#| code-fold: true
+#| code-summary: "Univariate R² (Usefulness)"
+from sklearn.linear_model import LinearRegression
+
+r2_scores = {}
+
+for col in X.columns:
+    model = LinearRegression()
+    model.fit(X[[col]], y)
+    r2_scores[col] = model.score(X[[col]], y)
+
+usefulness_df = pd.DataFrame.from_dict(r2_scores, orient="index", columns=["Usefulness (R²)"])
+usefulness_df = usefulness_df.sort_values(by="Usefulness (R²)", ascending=False)
+
+usefulness_df
+
+```
+
+### Summary of the First Three Metrics
+
+So far, we’ve explored three statistical perspectives on what drives satisfaction:
+
+- **Pearson Correlation** gives us a simple view of linear relationships.
+- **Standardized Coefficients** control for overlap between variables in a multivariate setting.
+- **Usefulness (R²)** shows how much variance each variable explains on its own.
+
+Despite their different methodologies, the same few variables consistently emerge as top drivers:
+- `appealing` and `rewarding` show up at the top in all three.
+- `impact`, `easy`, and `trust` are also moderately strong across metrics.
+- `build` scores low across the board — potentially indicating that customers don’t associate this dimension with satisfaction.
+
+This early convergence increases confidence in our results — though we'll validate further with machine learning and variance decomposition techniques next.
+
+### Shapley Values (LMG Decomposition in R)
+
+To correctly run Shapley value (LMG) decomposition for a linear regression model, I used R’s `relaimpo` package. This avoids the misbehavior I encountered using Python’s `dominance-analysis` package, which defaults to logistic regression.
+
+The table below shows the relative importance (as a % of R²) each predictor contributes based on averaging over all possible model combinations.
+
+```{r}
+#| label: "lmg-decomposition"
+#| warning: false
+#| message: false
+
+# Load the library
+library(relaimpo)
+
+# Load the CSV using correct relative path
+df <- read.csv("/home/jovyan/mgta495/mysite/projects/hw4/data_for_drivers_analysis.csv")
+
+# Filter Brand 1
+df1 <- subset(df, brand == 1)
+
+# Fit model
+model <- lm(satisfaction ~ trust + build + differs + easy + appealing +
+              rewarding + popular + service + impact, data = df1)
+
+# Run Shapley / LMG decomposition
+result <- calc.relimp(model, type = "lmg", rela = TRUE)
+
+# Show results
+as.data.frame(result$lmg)
+
+```
+
+To accurately compute Shapley values (LMG decomposition) for a linear model, I used the `relaimpo` package in R. This method attributes each predictor’s average contribution to the model's R² by considering all possible combinations of variable orderings.
+
+Here are the results for Brand 1:
+
+| Variable   | LMG (Relative Importance) |
+|------------|----------------------------|
+| **appealing**  | 0.226 |
+| **rewarding**  | 0.214 |
+| **impact**     | 0.116 |
+| **easy**       | 0.099 |
+| **trust**      | 0.084 |
+| **popular**    | 0.089 |
+| **build**      | 0.079 |
+| **service**    | 0.065 |
+| **differs**    | 0.028 |
+
+Together, these add up to 1.0 (100% of model R²), showing how each perception variable contributes to explaining satisfaction.
+
+As with earlier metrics, `appealing` and `rewarding` again stand out as the most important drivers — further validated by this comprehensive decomposition.
+
+### Johnson’s Relative Weights
+
+Johnson’s Relative Weights decompose the model’s R² into contributions from each predictor by first transforming them into **orthogonal variables** (uncorrelated components), then mapping those contributions back.
+
+This approach is **computationally efficient** and handles multicollinearity well — while still providing results on the same scale as R².
+
+```{python}
+#| code-fold: true
+#| code-summary: "Compute Johnson's Relative Weights"
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+# Standardize predictors
+X_std = (X - X.mean()) / X.std()
+
+# Step 1: Correlation matrix and eigen decomposition
+R = np.corrcoef(X_std.T)
+eigvals, eigvecs = np.linalg.eigh(R)
+
+# Step 2: Project predictors onto eigenvectors
+Lambda = eigvecs @ np.diag(np.sqrt(eigvals)) @ eigvecs.T
+Z = X_std @ Lambda  # uncorrelated predictors
+
+# Step 3: Regress on transformed Z
+model = LinearRegression().fit(Z, y)
+beta = model.coef_
+
+# Step 4: Map weights back to original variables
+raw_weights = (Lambda @ beta) ** 2
+rel_weights = raw_weights / np.sum(raw_weights)
+
+# Format results
+johnson_df = pd.DataFrame({
+    "Johnson's Relative Weight": rel_weights
+}, index=X.columns).sort_values(by="Johnson's Relative Weight", ascending=False)
+
+johnson_df
+
+```
