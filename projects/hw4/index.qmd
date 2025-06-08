@@ -3,6 +3,8 @@ title: "Machine Learning"
 author: "Brian Pintar"
 date: today
 jupyter: python3
+format: html
+engine: knitr
 ---
 
 
