@@ -249,9 +249,6 @@ This hands-on implementation helped solidify my understanding of clustering mech
 
 ## Key Drivers Analysis: What Influences Satisfaction
 
-_todo: replicate the table on slide 75 of the session 5 slides. Specifically, using the dataset provided in the file data_for_drivers_analysis.csv, calculate: pearson correlations, standardized regression coefficients, "usefulness", Shapley values for a linear regression, Johnson's relative weights, and the mean decrease in the gini coefficient from a random forest. You may use packages built into R or Python; you do not need to perform these calculations "by hand."_
-
-
 In this section, I replicate a key drivers analysis from class to explore which perceptual attributes most strongly explain **satisfaction** for **Brand 1**.
 
 The dataset includes survey responses where each row represents a customer and the columns include:
