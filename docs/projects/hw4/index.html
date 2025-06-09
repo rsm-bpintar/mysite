@@ -212,7 +212,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="k-means-clustering-implemented-from-scratch" class="level2">
 <h2 class="anchored" data-anchor-id="k-means-clustering-implemented-from-scratch">K-Means Clustering: Implemented from Scratch</h2>
 <p>In this post, I implement the K-Means clustering algorithm <strong>from scratch</strong> and apply it to the Palmer Penguins dataset.</p>
-<p>The goal is to: 1. Write the K-Means algorithm by hand in Python. 2. Visualize how it works on real data. 3. Compare it with Python’s built-in <code>KMeans</code> implementation. 4. Evaluate model performance using <strong>within-cluster sum of squares (WCSS)</strong> and <strong>silhouette scores</strong>. 5. Determine the “right” number of clusters.</p>
+<p>The goal is to:</p>
+<ol type="1">
+<li>Write the K-Means algorithm by hand in Python.</li>
+<li>Visualize how it works on real data.</li>
+<li>Compare it with Python’s built-in <code>KMeans</code> implementation.</li>
+<li>Evaluate model performance using <strong>within-cluster sum of squares (WCSS)</strong> and <strong>silhouette scores</strong>.</li>
+<li>Determine the “right” number of clusters.</li>
+</ol>
 <p>We’ll use two features: <strong>bill length</strong> and <strong>flipper length</strong> — a natural fit for 2D visualization of clustering in action.</p>
 <hr>
 <p>How the Algorithm Works:</p>
@@ -226,7 +233,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <hr>
 <section id="implementing-k-means-in-python" class="level3">
 <h3 class="anchored" data-anchor-id="implementing-k-means-in-python">Implementing K-Means in Python:</h3>
-<p>We define functions to: - Initialize centroids randomly - Assign each point to the nearest centroid - Update centroids using the mean of assigned points - Iterate until convergence</p>
+<p>We define functions to initialize centroids randomly, assign each point to the nearest centroid, update centroids using the mean of assigned points, and iterate until convergence.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Show code</summary>
@@ -338,7 +345,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <blockquote class="blockquote">
 <p><video src="kmeans_penguins_animation.mp4" class="img-fluid" controls=""><a href="kmeans_penguins_animation.mp4">Video</a></video></p>
 </blockquote>
-<p>Each frame above shows the K-Means algorithm as it: - Reassigns data points to the nearest centroid - Moves centroids to the mean of their assigned points - Gradually stabilizes and stops updating</p>
+<p>Each frame above shows the K-Means algorithm as it reassigns data points to the nearest centroid, moves centroids to the mean of their assigned points, and gradually stabilizes and stops updating.</p>
 <p>This visualization helps demonstrate how K-Means converges over a few iterations. It’s especially helpful for building intuition around how cluster boundaries emerge.</p>
 <div class="cell">
 <details class="code-fold">
@@ -403,7 +410,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="important-metrics" class="level3">
 <h3 class="anchored" data-anchor-id="important-metrics">Important Metrics</h3>
-<p>We calculate: - <strong>Within-Cluster Sum of Squares (WCSS)</strong>: Lower is better; the “elbow” suggests the optimal <code>k</code>. - <strong>Silhouette Score</strong>: Measures cohesion and separation; higher is better.</p>
+<p>We calculate:</p>
+<ol type="1">
+<li><strong>Within-Cluster Sum of Squares (WCSS)</strong>: Lower is better; the “elbow” suggests the optimal <code>k</code>.</li>
+<li><strong>Silhouette Score</strong>: Measures cohesion and separation; higher is better.</li>
+</ol>
 <div class="cell">
 <details class="code-fold">
 <summary>Show code</summary>
@@ -461,8 +472,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="key-drivers-analysis-what-influences-satisfaction" class="level2">
 <h2 class="anchored" data-anchor-id="key-drivers-analysis-what-influences-satisfaction">Key Drivers Analysis: What Influences Satisfaction</h2>
 <p>In this section, I replicate a key drivers analysis from class to explore which perceptual attributes most strongly explain <strong>satisfaction</strong> for <strong>Brand 1</strong>.</p>
-<p>The dataset includes survey responses where each row represents a customer and the columns include: - A set of <strong>perception variables</strong> (e.g., trust, ease of use, appeal) - A <strong>satisfaction score</strong> (the target variable we aim to explain)</p>
-<p>I perform a <strong>Key Drivers Analysis</strong> using six different variable importance metrics, each of which offers a unique lens for interpreting what matters most: 1. <strong>Pearson Correlation</strong> 2. <strong>Standardized Regression Coefficients</strong> 3. <strong>Usefulness</strong> (R² from univariate regressions) 4. <strong>Shapley Values (LMG)</strong> 5. <strong>Johnson’s Relative Weights</strong> 6. <strong>Random Forest Gini Importance</strong></p>
+<p>The dataset includes survey responses where each row represents a customer and the columns include:</p>
+<ul>
+<li>A set of <strong>perception variables</strong> (e.g., trust, ease of use, appeal)</li>
+<li>A <strong>satisfaction score</strong> (the target variable we aim to explain)</li>
+</ul>
+<p>I perform a <strong>Key Drivers Analysis</strong> using six different variable importance metrics, each of which offers a unique lens for interpreting what matters most:</p>
+<ol type="1">
+<li><strong>Pearson Correlation</strong></li>
+<li><strong>Standardized Regression Coefficients</strong></li>
+<li><strong>Usefulness</strong> (R² from univariate regressions)</li>
+<li><strong>Shapley Values (LMG)</strong></li>
+<li><strong>Johnson’s Relative Weights</strong></li>
+<li><strong>Random Forest Gini Importance</strong></li>
+</ol>
 <p>This helps compare <strong>statistical</strong>, <strong>machine learning</strong>, and <strong>variance decomposition</strong> approaches to identifying the strongest drivers of customer satisfaction.</p>
 <p>For simplicity and clarity, I focus on <strong>Brand 1</strong> only.</p>
 <p>Let’s load and filter the data.</p>
@@ -1418,7 +1441,12 @@ build             0.002308</code></pre>
 <li><strong>Standardized Coefficients</strong> control for overlap between variables in a multivariate setting.</li>
 <li><strong>Usefulness (R²)</strong> shows how much variance each variable explains on its own.</li>
 </ul>
-<p>Despite their different methodologies, the same few variables consistently emerge as top drivers: - <code>appealing</code> and <code>rewarding</code> show up at the top in all three. - <code>impact</code>, <code>easy</code>, and <code>trust</code> are also moderately strong across metrics. - <code>build</code> scores low across the board — potentially indicating that customers don’t associate this dimension with satisfaction.</p>
+<p>Despite their different methodologies, the same few variables consistently emerge as top drivers:</p>
+<ul>
+<li><code>appealing</code> and <code>rewarding</code> show up at the top in all three.</li>
+<li><code>impact</code>, <code>easy</code>, and <code>trust</code> are also moderately strong across metrics.</li>
+<li><code>build</code> scores low across the board — potentially indicating that customers don’t associate this dimension with satisfaction.</li>
+</ul>
 <p>This early convergence increases confidence in our results — though we’ll validate further with machine learning and variance decomposition techniques next.</p>
 </section>
 <section id="shapley-values-lmg-decomposition-in-r" class="level3">

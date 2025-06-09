@@ -13,6 +13,7 @@ engine: knitr
 In this post, I implement the K-Means clustering algorithm **from scratch** and apply it to the Palmer Penguins dataset.
 
 The goal is to:
+
 1. Write the K-Means algorithm by hand in Python.
 2. Visualize how it works on real data.
 3. Compare it with Python’s built-in `KMeans` implementation.
@@ -36,11 +37,7 @@ K-Means is an **unsupervised learning** algorithm that partitions data into `K` 
 
 ### Implementing K-Means in Python:
 
-We define functions to:
-- Initialize centroids randomly
-- Assign each point to the nearest centroid
-- Update centroids using the mean of assigned points
-- Iterate until convergence
+We define functions to initialize centroids randomly, assign each point to the nearest centroid, update centroids using the mean of assigned points, and iterate until convergence.
 
 ```{python}
 #| code-fold: true
@@ -142,10 +139,7 @@ ani.save("kmeans_penguins_animation.mp4", writer='ffmpeg')
 ```
 > ![](kmeans_penguins_animation.mp4)
 
-Each frame above shows the K-Means algorithm as it:
-- Reassigns data points to the nearest centroid
-- Moves centroids to the mean of their assigned points
-- Gradually stabilizes and stops updating
+Each frame above shows the K-Means algorithm as it reassigns data points to the nearest centroid, moves centroids to the mean of their assigned points, and gradually stabilizes and stops updating.
 
 This visualization helps demonstrate how K-Means converges over a few iterations. It's especially helpful for building intuition around how cluster boundaries emerge.
 
@@ -203,8 +197,9 @@ plt.show()
 ### Important Metrics
 
 We calculate:
-- **Within-Cluster Sum of Squares (WCSS)**: Lower is better; the “elbow” suggests the optimal `k`.
-- **Silhouette Score**: Measures cohesion and separation; higher is better.
+
+1. **Within-Cluster Sum of Squares (WCSS)**: Lower is better; the “elbow” suggests the optimal `k`.
+2. **Silhouette Score**: Measures cohesion and separation; higher is better.
 
 
 ```{python}
@@ -252,10 +247,12 @@ This hands-on implementation helped solidify my understanding of clustering mech
 In this section, I replicate a key drivers analysis from class to explore which perceptual attributes most strongly explain **satisfaction** for **Brand 1**.
 
 The dataset includes survey responses where each row represents a customer and the columns include:
+
 - A set of **perception variables** (e.g., trust, ease of use, appeal)
 - A **satisfaction score** (the target variable we aim to explain)
 
 I perform a **Key Drivers Analysis** using six different variable importance metrics, each of which offers a unique lens for interpreting what matters most:
+
 1. **Pearson Correlation**
 2. **Standardized Regression Coefficients**
 3. **Usefulness** (R² from univariate regressions)
@@ -378,6 +375,7 @@ So far, we’ve explored three statistical perspectives on what drives satisfact
 - **Usefulness (R²)** shows how much variance each variable explains on its own.
 
 Despite their different methodologies, the same few variables consistently emerge as top drivers:
+
 - `appealing` and `rewarding` show up at the top in all three.
 - `impact`, `easy`, and `trust` are also moderately strong across metrics.
 - `build` scores low across the board — potentially indicating that customers don’t associate this dimension with satisfaction.
